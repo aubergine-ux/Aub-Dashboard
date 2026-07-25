@@ -11,7 +11,7 @@ A responsive admin dashboard for sales & inventory built with vanilla JS, client
 
 [**Live Demo**](https://aubergine-ux.github.io/responsive-sales-dashboard/)
 
-<img src="https://github.com/user-attachments/assets/19501074-66fc-4550-83ac-b060c2e39b04" width="100%" alt="Sales Dashboard screenshot"/>
+<img src="https://github.com/user-attachments/assets/5a9533f7-978f-4edd-9ff2-02ed07f15089" width="100%" alt="Sales Dashboard screenshot"/>
 
 </div>
 
