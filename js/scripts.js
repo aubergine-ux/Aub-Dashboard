@@ -18,6 +18,21 @@ function closeSidebar() {
   sidebar.classList.remove('sidebar-responsive')
 }
 
+const settings = {
+  accent: '#b57bff',
+  lowStock: 10,
+  density: 'comfortable',
+  landing: 'dashboard',
+}
+
+Object.assign(settings, JSON.parse(localStorage.getItem('dash:settings') || '{}'))
+
+function applySettings() {
+  document.documentElement.style.setProperty('--accent', settings.accent)
+  document.body.classList.toggle('compact', settings.density === 'compact')
+  localStorage.setItem('dash:settings', JSON.stringify(settings))
+}
+
 const products = [
   { id: 1, name: 'Laptop', category: 'Electronics', price: 1200, stock: 27 },
   { id: 2, name: 'Phone', category: 'Electronics', price: 599, stock: 5 },
@@ -29,11 +44,11 @@ const products = [
 ]
 
 const customers = [
-  { id: 1, name: 'Ada Lovelace', email: 'adal@email.com', orders: 15, spent: 6700 },
-  { id: 2, name: 'Alan Turing', email: 'alant@email.com', orders: 8, spent: 3211 },
-  { id: 3, name: 'Grace Hopper', email: 'graceh@email.com', orders: 32, spent: 11940 },
-  { id: 4, name: 'Linus Torvalds', email: 'linust@email.com', orders: 1, spent: 50 },
-  { id: 5, name: 'Margaret Hamilton', email: 'margareth@email.com', orders: 11, spent: 600 },
+  { id: 1, name: 'Ada Orange', email: 'adao@email.com', orders: 15, spent: 6700 },
+  { id: 2, name: 'Alan Torontoblue', email: 'alant@email.com', orders: 8, spent: 3211 },
+  { id: 3, name: 'Grace Lovelace', email: 'gracel@email.com', orders: 32, spent: 11940 },
+  { id: 4, name: 'Linus Tomato', email: 'linust@email.com', orders: 1, spent: 50 },
+  { id: 5, name: 'Lewis Hamilton', email: 'lewish@email.com', orders: 11, spent: 600 },
 ]
 
 const inventory = [
@@ -49,7 +64,7 @@ const badge = (text, tone) => `<span class="badge badge-${tone}">${text}</span>`
 
 function stockBadge(n) {
   if (n === 0) return badge('Out of Stock', 'red')
-  if (n < 10) return badge('Low Stock', 'orange')
+  if (n < settings.lowStock) return badge('Low Stock', 'orange')
   return badge('In Stock', 'green')
 }
 
@@ -95,7 +110,6 @@ const views = {
 const stubs = {
   categories: 'Nothing here yet.',
   reports: 'Nothing here yet.',
-  settings: 'Nothing here yet.',
 }
 
 let sortKey = 'id'
@@ -135,6 +149,35 @@ function table(view) {
   return `<table class="data-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
 }
 
+const fields = [
+  { key: 'accent', label: 'Accent color', type: 'color' },
+  { key: 'lowStock', label: 'Low stock threshold', type: 'number', min: 0, max: 99 },
+  { key: 'density', label: 'Table density', options: ['comfortable', 'compact'] },
+  { key: 'landing', label: 'Start page', options: ['dashboard', 'products', 'customers', 'inventory'] },
+]
+
+function field(f) {
+  const input = f.options
+    ? `<select data-setting="${f.key}">${f.options
+        .map((o) => `<option ${o === settings[f.key] ? 'selected' : ''}>${o}</option>`)
+        .join('')}</select>`
+    : `<input type="${f.type}" data-setting="${f.key}" value="${settings[f.key]}"${
+        f.min === undefined ? '' : ` min="${f.min}" max="${f.max}"`
+      }>`
+
+  return `<label class="field"><span>${f.label}</span>${input}</label>`
+}
+
+function settingsForm() {
+  return `
+    <div class="settings">
+      ${fields.map(field).join('')}
+      <p class="hint">Changes save as you make them.</p>
+      <button class="btn" data-reset>Reset to defaults</button>
+    </div>
+  `
+}
+
 function title(text) {
   return `<div class="main-title"><h2>${text}</h2></div>`
 }
@@ -144,21 +187,44 @@ function showPage(page) {
     main.innerHTML = dashboard
     return renderCharts()
   }
+  if (page === 'settings') {
+    main.innerHTML = title('settings') + settingsForm()
+    return
+  }
 
   const view = views[page]
   main.innerHTML = view ? title(page) + table(view) : title(page) + `<p>${stubs[page]}</p>`
 }
 
-// Headers are rebuilt on every render, so listen on the container instead.
+function go(page) {
+  showPage(page)
+  links.forEach((l) => l.parentElement.classList.toggle('active', l.dataset.page === page))
+}
+
+// Controls are rebuilt on every render, so listen on the container instead.
 main.addEventListener('click', (e) => {
+  if (e.target.closest('[data-reset]')) {
+    localStorage.removeItem('dash:settings')
+    Object.assign(settings, { accent: '#b57bff', lowStock: 10, density: 'comfortable', landing: 'dashboard' })
+    applySettings()
+    return go('settings')
+  }
+
   const header = e.target.closest('th[data-key]')
   if (!header) return
 
   const key = header.dataset.key
   sortDir = key === sortKey && sortDir === 'asc' ? 'desc' : 'asc'
   sortKey = key
-
   showPage('products')
+})
+
+main.addEventListener('change', (e) => {
+  const key = e.target.dataset.setting
+  if (!key) return
+
+  settings[key] = e.target.type === 'number' ? Number(e.target.value) : e.target.value
+  applySettings()
 })
 
 const links = [...document.querySelectorAll('.sidebar-list-item a')]
@@ -166,9 +232,7 @@ const links = [...document.querySelectorAll('.sidebar-list-item a')]
 links.forEach((link) => {
   link.addEventListener('click', (e) => {
     e.preventDefault()
-    links.forEach((l) => l.parentElement.classList.remove('active'))
-    link.parentElement.classList.add('active')
-    showPage(link.dataset.page)
+    go(link.dataset.page)
     closeSidebar()
   })
 })
@@ -222,5 +286,5 @@ function renderCharts() {
   }).render()
 }
 
-renderCharts()
-document.querySelector('[data-page="dashboard"]')?.parentElement.classList.add('active')
+applySettings()
+go(settings.landing)
