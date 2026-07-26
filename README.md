@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛒 Aub Utility Dashboard
+# 🛒 Aub Dashboard
 
 A responsive admin dashboard for sales & inventory built with vanilla JS, client-side routing, and ApexCharts.
 
