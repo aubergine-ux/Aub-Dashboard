@@ -459,6 +459,7 @@ body.compact .data-table th {
   padding: 5px 14px;
 }
 
+.apexcharts-legend { padding: 0 !important; }
 
 /* ---------- MEDIA QUERIES ---------- */
 

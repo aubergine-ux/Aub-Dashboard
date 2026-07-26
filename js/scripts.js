@@ -44,10 +44,10 @@ const products = [
 ]
 
 const customers = [
-  { id: 1, name: 'Ada Orange', email: 'adao@email.com', orders: 15, spent: 6700 },
-  { id: 2, name: 'Alan Torontoblue', email: 'alant@email.com', orders: 8, spent: 3211 },
-  { id: 3, name: 'Grace Lovelace', email: 'gracel@email.com', orders: 32, spent: 11940 },
-  { id: 4, name: 'Linus Tomato', email: 'linust@email.com', orders: 1, spent: 50 },
+  { id: 1, name: 'Ada Lovefella', email: 'adal@email.com', orders: 15, spent: 6700 },
+  { id: 2, name: 'Alan Toronto', email: 'alant@email.com', orders: 8, spent: 3211 },
+  { id: 3, name: 'Grace Herevan', email: 'graceh@email.com', orders: 32, spent: 11940 },
+  { id: 4, name: 'Linus Sebis', email: 'linust@email.com', orders: 1, spent: 50 },
   { id: 5, name: 'Lewis Hamilton', email: 'lewish@email.com', orders: 11, spent: 600 },
 ]
 
@@ -60,12 +60,25 @@ const inventory = [
 ]
 
 const money = (n) => `$${n.toLocaleString()}`
+const sum = (arr, fn) => arr.reduce((n, x) => n + fn(x), 0)
 const badge = (text, tone) => `<span class="badge badge-${tone}">${text}</span>`
 
 function stockBadge(n) {
   if (n === 0) return badge('Out of Stock', 'red')
   if (n < settings.lowStock) return badge('Low Stock', 'orange')
   return badge('In Stock', 'green')
+}
+
+function byCategory() {
+  const groups = products.reduce((acc, p) => {
+    acc[p.category] ??= { category: p.category, count: 0, stock: 0, value: 0 }
+    acc[p.category].count += 1
+    acc[p.category].stock += p.stock
+    acc[p.category].value += p.price * p.stock
+    return acc
+  }, {})
+
+  return Object.values(groups)
 }
 
 const views = {
@@ -79,6 +92,16 @@ const views = {
       { key: 'price', label: 'Price', cell: (p) => money(p.price) },
       { key: 'stock', label: 'Stock' },
       { key: 'stock', label: 'Status', cell: (p) => stockBadge(p.stock) },
+    ],
+  },
+  categories: {
+    rows: byCategory,
+    sortable: true,
+    cols: [
+      { key: 'category', label: 'Category' },
+      { key: 'count', label: 'Products' },
+      { key: 'stock', label: 'Units' },
+      { key: 'value', label: 'Stock Value', cell: (c) => money(c.value) },
     ],
   },
   customers: {
@@ -105,11 +128,6 @@ const views = {
       },
     ],
   },
-}
-
-const stubs = {
-  categories: 'Nothing here yet.',
-  reports: 'Nothing here yet.',
 }
 
 let sortKey = 'id'
@@ -178,6 +196,39 @@ function settingsForm() {
   `
 }
 
+function stat(label, value) {
+  return `
+    <div class="card">
+      <div class="card-inner"><h3>${label}</h3></div>
+      <h1>${value}</h1>
+    </div>
+  `
+}
+
+function reportsPage() {
+  const cats = byCategory()
+  const dead = products.filter((p) => p.stock === 0).length
+
+  return `
+    <div class="main-cards">
+      ${stat('Stock value', money(sum(cats, (c) => c.value)))}
+      ${stat('Units on hand', sum(cats, (c) => c.stock))}
+      ${stat('Out of stock', dead)}
+      ${stat('Customer revenue', money(sum(customers, (c) => c.spent)))}
+    </div>
+    <div class="charts">
+      <div class="charts-card">
+        <div class="chart-title">Units by category</div>
+        <div id="category-chart"></div>
+      </div>
+      <div class="charts-card">
+        <div class="chart-title">Top customers by spend</div>
+        <div id="spend-chart"></div>
+      </div>
+    </div>
+  `
+}
+
 function title(text) {
   return `<div class="main-title"><h2>${text}</h2></div>`
 }
@@ -191,9 +242,12 @@ function showPage(page) {
     main.innerHTML = title('settings') + settingsForm()
     return
   }
+  if (page === 'reports') {
+    main.innerHTML = title('reports') + reportsPage()
+    return renderReports()
+  }
 
-  const view = views[page]
-  main.innerHTML = view ? title(page) + table(view) : title(page) + `<p>${stubs[page]}</p>`
+  main.innerHTML = title(page) + table(views[page])
 }
 
 function go(page) {
@@ -216,7 +270,7 @@ main.addEventListener('click', (e) => {
   const key = header.dataset.key
   sortDir = key === sortKey && sortDir === 'asc' ? 'desc' : 'asc'
   sortKey = key
-  showPage('products')
+  showPage(document.querySelector('.sidebar-list-item.active a').dataset.page)
 })
 
 main.addEventListener('change', (e) => {
@@ -283,6 +337,35 @@ function renderCharts() {
       { ...axis, title: { text: 'Purchase Orders', style: { color: theme.ink } } },
       { ...axis, opposite: true, title: { text: 'Sales Orders', style: { color: theme.ink } } },
     ],
+  }).render()
+}
+
+function renderReports() {
+  const cats = byCategory()
+  const top = [...customers].sort((a, b) => b.spent - a.spent)
+
+  new ApexCharts(document.querySelector('#category-chart'), {
+    ...chartBase,
+    chart: { ...chartBase.chart, type: 'donut', height: 320 },
+    series: cats.map((c) => c.stock),
+    labels: cats.map((c) => c.category),
+    colors: theme.ramp,
+    legend: { ...chartBase.legend, position: 'bottom' },
+    plotOptions: { pie: { donut: { size: '72%' } } },
+    stroke: { width: 1, colors: [theme.panel] },
+    tooltip: { theme: 'dark' },
+  }).render()
+
+  new ApexCharts(document.querySelector('#spend-chart'), {
+    ...chartBase,
+    chart: { ...chartBase.chart, type: 'bar', height: 320 },
+    series: [{ name: 'Spent', data: top.map((c) => c.spent) }],
+    colors: theme.ramp,
+    legend: { ...chartBase.legend, show: false },
+    plotOptions: { bar: { distributed: true, horizontal: true, barHeight: '55%' } },
+    stroke: { show: true, width: 2, colors: ['transparent'] },
+    xaxis: { ...axis, categories: top.map((c) => c.name) },
+    yaxis: { ...axis },
   }).render()
 }
 
