@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aub Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="images/favicon.png">
@@ -12,9 +14,9 @@
 <body>
     <div class="grid-container">
         <header class="header">
-            <div class="menu-icon" onclick="openSidebar()">
+            <button class="menu-icon" aria-label="Open menu">
                 <span class="material-icons-outlined">menu</span>
-            </div>
+            </button>
             <div class="header-left">
                 <span class="material-icons-outlined">search</span>
             </div>
@@ -25,112 +27,110 @@
             </div>
         </header>
 
-
         <aside id="sidebar">
             <div class="sidebar-title">
                 <div class="sidebar-brand">
                     <span class="material-icons-outlined">shopping_cart</span> STORE
                 </div>
-                <span class="material-icons-outlined" onclick="closeSidebar()">close</span>
+                <button class="sidebar-close" aria-label="Close menu">
+                    <span class="material-icons-outlined">close</span>
+                </button>
             </div>
 
             <ul class="sidebar-list">
-          <li class="sidebar-list-item">
-            <a href="#" data-page="dashboard">
-              <span class="material-icons-outlined">dashboard</span> Dashboard
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="products">
-              <span class="material-icons-outlined">inventory_2</span> Products
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="categories">
-              <span class="material-icons-outlined">category</span> Categories
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="customers">
-              <span class="material-icons-outlined">groups</span> Customers
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="inventory">
-              <span class="material-icons-outlined">fact_check</span> Inventory
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="reports"">
-              <span class="material-icons-outlined">poll</span> Reports
-            </a>
-          </li>
-          <li class="sidebar-list-item">
-            <a href="#" data-page="settings">
-              <span class="material-icons-outlined">settings</span> Settings
-            </a>
-          </li>
-        </ul>
+                <li class="sidebar-list-item">
+                    <a href="#dashboard" data-page="dashboard">
+                        <span class="material-icons-outlined">dashboard</span> Dashboard
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#products" data-page="products">
+                        <span class="material-icons-outlined">inventory_2</span> Products
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#categories" data-page="categories">
+                        <span class="material-icons-outlined">category</span> Categories
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#customers" data-page="customers">
+                        <span class="material-icons-outlined">groups</span> Customers
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#inventory" data-page="inventory">
+                        <span class="material-icons-outlined">fact_check</span> Inventory
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#reports" data-page="reports">
+                        <span class="material-icons-outlined">poll</span> Reports
+                    </a>
+                </li>
+                <li class="sidebar-list-item">
+                    <a href="#settings" data-page="settings">
+                        <span class="material-icons-outlined">settings</span> Settings
+                    </a>
+                </li>
+            </ul>
         </aside>
-    
 
         <main class="main-container" id="main">
-        <div class="main-title">
-          <h2>DASHBOARD</h2>
-        </div>
-
-        <div class="main-cards">
-
-          <div class="card">
-            <div class="card-inner">
-              <h3>PRODUCTS</h3>
-              <span class="material-icons-outlined">inventory_2</span>
+            <div class="main-title">
+                <h2>DASHBOARD</h2>
             </div>
-            <h1>367</h1>
-          </div>
 
-          <div class="card">
-            <div class="card-inner">
-              <h3>CATEGORIES</h3>
-              <span class="material-icons-outlined">category</span>
+            <div class="main-cards">
+
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>PRODUCTS</h3>
+                        <span class="material-icons-outlined">inventory_2</span>
+                    </div>
+                    <h1>367</h1>
+                </div>
+
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>CATEGORIES</h3>
+                        <span class="material-icons-outlined">category</span>
+                    </div>
+                    <h1>15</h1>
+                </div>
+
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>CUSTOMERS</h3>
+                        <span class="material-icons-outlined">groups</span>
+                    </div>
+                    <h1>670</h1>
+                </div>
+
+                <div class="card">
+                    <div class="card-inner">
+                        <h3>ALERTS</h3>
+                        <span class="material-icons-outlined">notification_important</span>
+                    </div>
+                    <h1>5</h1>
+                </div>
+
             </div>
-            <h1>15</h1>
-          </div>
 
-          <div class="card">
-            <div class="card-inner">
-              <h3>CUSTOMERS</h3>
-              <span class="material-icons-outlined">groups</span>
+            <div class="charts">
+
+                <div class="charts-card">
+                    <h2 class="chart-title">Top 5 Products</h2>
+                    <div id="bar-chart"></div>
+                </div>
+
+                <div class="charts-card">
+                    <h2 class="chart-title">Purchase and Sales Orders</h2>
+                    <div id="area-chart"></div>
+                </div>
+
             </div>
-            <h1>670</h1>
-          </div>
-
-          <div class="card">
-            <div class="card-inner">
-              <h3>ALERTS</h3>
-              <span class="material-icons-outlined">notification_important</span>
-            </div>
-            <h1>5</h1>
-          </div>
-
-        </div>
-
-        <div class="charts">
-
-          <div class="charts-card">
-            <h2 class="chart-title">Top 5 Products</h2>
-            <div id="bar-chart"></div>
-          </div>
-
-          <div class="charts-card">
-            <h2 class="chart-title">Purchase and Sales Orders</h2>
-            <div id="area-chart"></div>
-          </div>
-
-        </div>
-      </main>
-
-
+        </main>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/5.6.0/apexcharts.min.js"></script>
