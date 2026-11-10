@@ -91,7 +91,6 @@ function byCategory() {
 const views = {
   products: {
     rows: () => products,
-    sortable: true,
     cols: [
       { key: 'id', label: 'ID' },
       { key: 'name', label: 'Name' },
@@ -103,7 +102,6 @@ const views = {
   },
   categories: {
     rows: byCategory,
-    sortable: true,
     cols: [
       { key: 'category', label: 'Category' },
       { key: 'count', label: 'Products' },
@@ -155,11 +153,11 @@ function compare(a, b) {
 }
 
 function table(view) {
-  const rows = view.sortable ? [...view.rows()].sort(compare) : view.rows()
+  const rows = [...view.rows()].sort(compare)
 
   const head = view.cols
     .map((c) => {
-      if (!view.sortable || c.sort === false) return `<th>${c.label}</th>`
+      if (c.sort === false) return `<th>${c.label}</th>`
       const active = c.key === sortKey
       const arrow = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''
       const aria = active ? `${sortDir}ending` : 'none'
