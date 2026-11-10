@@ -28,7 +28,7 @@ A responsive admin dashboard for sales & inventory built with vanilla JS, client
 - HTML5 & CSS3 (Grid + custom properties)
 - Vanilla JavaScript (ES6, no framework)
 - [ApexCharts](https://apexcharts.com/) for data visualization
-- Material Icons & Montserrat via Google Fonts
+- Material Icons & IBM Plex Mono via Google Fonts
 
 ## Getting Started
 
