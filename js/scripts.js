@@ -1,13 +1,17 @@
+const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
 const theme = {
-  ink: '#e8d5ff',
-  rule: '#3d2261',
-  panel: '#1e0f33',
-  ramp: ['#b57bff', '#9a5ce8', '#7f42d1', '#6b21a8', '#4c1580'],
-  green: '#4ade80',
+  ink: token('--ink'),
+  rule: token('--rule'),
+  panel: token('--panel'),
+  green: token('--ok'),
+  shades: ['#9a5ce8', '#7f42d1', '#6b21a8', '#4c1580'],
 }
 
 const main = document.getElementById('main')
 const sidebar = document.getElementById('sidebar')
+const links = [...document.querySelectorAll('.sidebar-list-item a')]
+const pages = links.map((l) => l.dataset.page)
 const dashboard = main.innerHTML
 
 function openSidebar() {
@@ -18,14 +22,17 @@ function closeSidebar() {
   sidebar.classList.remove('sidebar-responsive')
 }
 
-const settings = {
+const defaults = {
   accent: '#b57bff',
   lowStock: 10,
   density: 'comfortable',
   landing: 'dashboard',
 }
 
-Object.assign(settings, JSON.parse(localStorage.getItem('dash:settings') || '{}'))
+const settings = { ...defaults, ...JSON.parse(localStorage.getItem('dash:settings') || '{}') }
+
+// The accent is user-set, so the ramp is built per render.
+const ramp = () => [settings.accent, ...theme.shades]
 
 function applySettings() {
   document.documentElement.style.setProperty('--accent', settings.accent)
@@ -91,7 +98,7 @@ const views = {
       { key: 'category', label: 'Category' },
       { key: 'price', label: 'Price', cell: (p) => money(p.price) },
       { key: 'stock', label: 'Stock' },
-      { key: 'stock', label: 'Status', cell: (p) => stockBadge(p.stock) },
+      { key: 'stock', label: 'Status', sort: false, cell: (p) => stockBadge(p.stock) },
     ],
   },
   categories: {
@@ -124,6 +131,7 @@ const views = {
       {
         key: 'quantity',
         label: 'Status',
+        sort: false,
         cell: (i) => (i.quantity <= i.reorder ? badge('Reorder', 'red') : badge('OK', 'green')),
       },
     ],
@@ -151,9 +159,11 @@ function table(view) {
 
   const head = view.cols
     .map((c) => {
-      if (!view.sortable) return `<th>${c.label}</th>`
-      const arrow = c.key === sortKey ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''
-      return `<th data-key="${c.key}">${c.label}${arrow}</th>`
+      if (!view.sortable || c.sort === false) return `<th>${c.label}</th>`
+      const active = c.key === sortKey
+      const arrow = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''
+      const aria = active ? `${sortDir}ending` : 'none'
+      return `<th data-key="${c.key}" tabindex="0" aria-sort="${aria}">${c.label}${arrow}</th>`
     })
     .join('')
 
@@ -171,7 +181,7 @@ const fields = [
   { key: 'accent', label: 'Accent color', type: 'color' },
   { key: 'lowStock', label: 'Low stock threshold', type: 'number', min: 0, max: 99 },
   { key: 'density', label: 'Table density', options: ['comfortable', 'compact'] },
-  { key: 'landing', label: 'Start page', options: ['dashboard', 'products', 'customers', 'inventory'] },
+  { key: 'landing', label: 'Start page', options: pages },
 ]
 
 function field(f) {
@@ -234,6 +244,8 @@ function title(text) {
 }
 
 function showPage(page) {
+  clearCharts()
+
   if (page === 'dashboard') {
     main.innerHTML = dashboard
     return renderCharts()
@@ -251,26 +263,43 @@ function showPage(page) {
 }
 
 function go(page) {
+  sortKey = views[page]?.cols[0].key
+  sortDir = 'asc'
   showPage(page)
   links.forEach((l) => l.parentElement.classList.toggle('active', l.dataset.page === page))
+}
+
+function route() {
+  const page = location.hash.slice(1)
+  go(pages.includes(page) ? page : settings.landing)
+}
+
+function sortBy(key) {
+  sortDir = key === sortKey && sortDir === 'asc' ? 'desc' : 'asc'
+  sortKey = key
+  showPage(document.querySelector('.sidebar-list-item.active a').dataset.page)
 }
 
 // Controls are rebuilt on every render, so listen on the container instead.
 main.addEventListener('click', (e) => {
   if (e.target.closest('[data-reset]')) {
     localStorage.removeItem('dash:settings')
-    Object.assign(settings, { accent: '#b57bff', lowStock: 10, density: 'comfortable', landing: 'dashboard' })
+    Object.assign(settings, defaults)
     applySettings()
     return go('settings')
   }
 
   const header = e.target.closest('th[data-key]')
-  if (!header) return
+  if (header) sortBy(header.dataset.key)
+})
 
-  const key = header.dataset.key
-  sortDir = key === sortKey && sortDir === 'asc' ? 'desc' : 'asc'
-  sortKey = key
-  showPage(document.querySelector('.sidebar-list-item.active a').dataset.page)
+main.addEventListener('keydown', (e) => {
+  const key = e.target.dataset.key
+  if (!key || (e.key !== 'Enter' && e.key !== ' ')) return
+
+  e.preventDefault()
+  sortBy(key)
+  main.querySelector(`th[data-key="${key}"]`).focus()
 })
 
 main.addEventListener('change', (e) => {
@@ -281,15 +310,11 @@ main.addEventListener('change', (e) => {
   applySettings()
 })
 
-const links = [...document.querySelectorAll('.sidebar-list-item a')]
+links.forEach((link) => link.addEventListener('click', closeSidebar))
 
-links.forEach((link) => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault()
-    go(link.dataset.page)
-    closeSidebar()
-  })
-})
+document.querySelector('.menu-icon').addEventListener('click', openSidebar)
+document.querySelector('.sidebar-close').addEventListener('click', closeSidebar)
+window.addEventListener('hashchange', route)
 
 const axis = {
   axisBorder: { show: true, color: theme.rule },
@@ -305,26 +330,39 @@ const chartBase = {
   tooltip: { shared: true, intersect: false, theme: 'dark' },
 }
 
+let charts = []
+
+function chart(id, options) {
+  const c = new ApexCharts(document.querySelector(id), options)
+  charts.push(c)
+  c.render()
+}
+
+function clearCharts() {
+  charts.forEach((c) => c.destroy())
+  charts = []
+}
+
 function renderCharts() {
-  new ApexCharts(document.querySelector('#bar-chart'), {
+  chart('#bar-chart', {
     ...chartBase,
     chart: { ...chartBase.chart, type: 'bar' },
     series: [{ name: 'Products', data: [10, 8, 6, 4, 2] }],
-    colors: theme.ramp,
+    colors: ramp(),
     plotOptions: { bar: { distributed: true, columnWidth: '40%' } },
     stroke: { show: true, width: 2, colors: ['transparent'] },
     xaxis: { ...axis, categories: ['Laptop', 'Phone', 'Monitor', 'Headphones', 'Camera'] },
     yaxis: { ...axis, title: { text: 'Count', style: { color: theme.ink } } },
-  }).render()
+  })
 
-  new ApexCharts(document.querySelector('#area-chart'), {
+  chart('#area-chart', {
     ...chartBase,
     chart: { ...chartBase.chart, type: 'area', stacked: false },
     series: [
       { name: 'Purchase Orders', data: [31, 40, 28, 51, 42, 109, 100] },
       { name: 'Sales Orders', data: [11, 32, 45, 32, 34, 52, 41] },
     ],
-    colors: [theme.ramp[0], theme.green],
+    colors: [settings.accent, theme.green],
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
     fill: {
       type: 'gradient',
@@ -337,37 +375,37 @@ function renderCharts() {
       { ...axis, title: { text: 'Purchase Orders', style: { color: theme.ink } } },
       { ...axis, opposite: true, title: { text: 'Sales Orders', style: { color: theme.ink } } },
     ],
-  }).render()
+  })
 }
 
 function renderReports() {
   const cats = byCategory()
   const top = [...customers].sort((a, b) => b.spent - a.spent)
 
-  new ApexCharts(document.querySelector('#category-chart'), {
+  chart('#category-chart', {
     ...chartBase,
     chart: { ...chartBase.chart, type: 'donut', height: 320 },
     series: cats.map((c) => c.stock),
     labels: cats.map((c) => c.category),
-    colors: theme.ramp,
+    colors: ramp(),
     legend: { ...chartBase.legend, position: 'bottom' },
     plotOptions: { pie: { donut: { size: '72%' } } },
     stroke: { width: 1, colors: [theme.panel] },
     tooltip: { theme: 'dark' },
-  }).render()
+  })
 
-  new ApexCharts(document.querySelector('#spend-chart'), {
+  chart('#spend-chart', {
     ...chartBase,
     chart: { ...chartBase.chart, type: 'bar', height: 320 },
     series: [{ name: 'Spent', data: top.map((c) => c.spent) }],
-    colors: theme.ramp,
+    colors: ramp(),
     legend: { ...chartBase.legend, show: false },
     plotOptions: { bar: { distributed: true, horizontal: true, barHeight: '55%' } },
     stroke: { show: true, width: 2, colors: ['transparent'] },
     xaxis: { ...axis, categories: top.map((c) => c.name) },
     yaxis: { ...axis },
-  }).render()
+  })
 }
 
 applySettings()
-go(settings.landing)
+route()
